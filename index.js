@@ -16,10 +16,11 @@ window.addEventListener("mousemove", (event) => {
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
+const canvas2 = document.querySelector("canvas.webgl2");
 
 // Scene
 const scene = new THREE.Scene();
-
+const scene2 = new THREE.Scene();
 /**
  * Object
  */
@@ -28,7 +29,10 @@ const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const mesh = new THREE.Mesh(geometry, material);
 // mesh.position.set(1, 1, 0);
 scene.add(mesh);
-
+const geometry2 = new THREE.BoxGeometry(1, 1, 2);
+const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const mesh2 = new THREE.Mesh(geometry2, material2);
+scene2.add(mesh2);
 /**
  * Sizes
  */
@@ -59,6 +63,7 @@ const camera = new THREE.PerspectiveCamera(
 
 camera.position.set(0, 0, 4);
 scene.add(camera);
+scene2.add(camera);
 const axesHelper = new THREE.AxesHelper();
 scene.add(axesHelper);
 // mesh.rotation.reorder("YXZ");
@@ -74,6 +79,12 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.render(scene, camera);
+
+const renderer2 = new THREE.WebGLRenderer({
+    canvas: canvas2,
+});
+renderer2.setSize(sizes.width, sizes.height);
+renderer2.render(scene2, camera);
 
 const clock = new THREE.Clock();
 //Animation
@@ -104,7 +115,7 @@ const tick = () => {
     const elpasedTime = clock.getElapsedTime();
 
     // console.log(elpasedTime);
-    // mesh.rotation.z = elpasedTime;
+    mesh2.rotation.z = elpasedTime;
     // mesh.position.y = Math.cos(1 * elpasedTime);
     // camera.position.x = Math.sin(1 * elpasedTime);
     //Update camera
@@ -114,6 +125,7 @@ const tick = () => {
     // camera.lookAt(mesh.position);
     controls.update();
     renderer.render(scene, camera);
+    renderer2.render(scene2, camera);
 
     window.requestAnimationFrame(tick);
 };
