@@ -4,35 +4,47 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Document</title>
-        <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script> -->
+        <title>Newton’s Cannon</title>
+        <link rel="stylesheet" href="style.css" />
         <script type="module" src="./index.js"></script>
-        <style src="./index.css"></style>
     </head>
     <body>
-        <h1>Cube with mouse camera control</h1>
-        <canvas class="webgl"></canvas>
-        <div class="slidecontainer">
-            <input
-                type="range"
-                min="-5"
-                max="5"
-                step="0.01"
-                value="0"
-                class="slider"
-                id="myRange-1"
-            />
-            <input
-                type="range"
-                min="-5"
-                max="5"
-                step="0.01"
-                value="0"
-                class="slider"
-                id="myRange-2"
-            />
+        <div class="tooltip" id="title1">
+            Newton’s Cannon
+
+            <p class="tooltiptext">
+                <a href="https://en.wikipedia.org/wiki/Newton%27s_cannonball"
+                    >wikipedia link</a
+                >
+                Newton's Cannon is a thought experiment used to motivate orbital
+                motion. For low speeds, the cannonball doesn't get far relative
+                to the Earth's size, and the downward gravity gives a parabolic
+                path. At higher speeds, the cannonball goes far enough that the
+                direction of gravity always toward the center of the Earth
+                changes, and so does the shape of the path. <br />
+            </p>
         </div>
-        <h1>animated cube, copy above cube</h1>
-        <canvas class="webgl2"></canvas>
+        <canvas class="webgl"></canvas>
+        <div id="info">
+            Speed of Projectile
+            <input
+                id="speedSlider"
+                type="range"
+                min="0"
+                max="8000"
+                step="100"
+                value="3000"
+                class="slider"
+                id="myRange"
+                onchange="speedReadout.innerHTML = speedSlider.value;"
+            />
+            Initial speed = <span id="speedReadout">3000</span> m/s<br />
+            <button id="buttonfire" class="button blue" type="button">
+                Fire
+            </button>
+            <button id="buttonreset" class="button red" type="button">
+                Reset
+            </button>
+        </div>
     </body>
 </html>

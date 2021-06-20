@@ -1,6 +1,7 @@
 // import * as THREE from "https://unpkg.com/three@0.127.0/build/three.module.js";
 import * as THREE from "./three.module.js";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.127.0/examples/jsm/controls/OrbitControls.js";
+
 /**
  * Cursor
  */
@@ -16,30 +17,69 @@ window.addEventListener("mousemove", (event) => {
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
-const canvas2 = document.querySelector("canvas.webgl2");
 
 // Scene
 const scene = new THREE.Scene();
-const scene2 = new THREE.Scene();
+
 /**
  * Object
  */
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const mesh = new THREE.Mesh(geometry, material);
-// mesh.position.set(1, 1, 0);
-scene.add(mesh);
-const geometry2 = new THREE.BoxGeometry(1, 1, 2);
-const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const mesh2 = new THREE.Mesh(geometry2, material2);
-scene2.add(mesh2);
+const earthMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(10, 32, 32),
+    new THREE.MeshPhongMaterial({
+        map: THREE.ImageUtils.loadTexture("images/2_no_clouds_4k.jpg"),
+        bumpMap: THREE.ImageUtils.loadTexture("images/elev_bump_4k.jpg"),
+        bumpScale: 0.005,
+        specularMap: THREE.ImageUtils.loadTexture("images/water_4k.png"),
+        specular: new THREE.Color("grey"),
+    })
+);
+scene.add(earthMesh);
+const coulds = new THREE.Mesh(
+    new THREE.SphereGeometry(10.03, 32, 32),
+    new THREE.MeshPhongMaterial({
+        map: THREE.ImageUtils.loadTexture("images/fair_clouds_4k.png"),
+        transparent: true,
+    })
+);
+scene.add(coulds);
+
+const space = new THREE.Mesh(
+    new THREE.SphereGeometry(90, 64, 64),
+    new THREE.MeshBasicMaterial({
+        map: THREE.ImageUtils.loadTexture("images/galaxy_starfield.png"),
+        side: THREE.BackSide,
+    })
+);
+scene.add(space);
+
+const projGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+const projMaterial = new THREE.MeshPhongMaterial({
+    map: THREE.ImageUtils.loadTexture("images/asteroid_texture.jpg"),
+    transparent: true,
+});
+const projectile = new THREE.Mesh(projGeometry, projMaterial);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+var light = new THREE.DirectionalLight(0xffffff, 0.5);
+light.position.set(5, 3, 10);
+scene.add(light);
+
 /**
  * Sizes
  */
 const sizes = {
-    width: 800,
-    height: 600,
+    width: window.innerWidth,
+    height: window.innerHeight,
 };
+
+window.addEventListener("resize", (event) => {
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
+
+    camera.aspect = sizes.width / sizes.height;
+});
 
 /**
  * Camera
@@ -50,27 +90,12 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     100
 );
-// const aspectRatio = sizes.width / sizes.height;
-// console.log(aspectRatio);
-// const camera = new THREE.OrthographicCamera(
-//     -1 * aspectRatio,
-//     1 * aspectRatio,
-//     1,
-//     -1,
-//     0.1,
-//     100
-// );
 
-camera.position.set(0, 0, 4);
+camera.position.set(0, 15, 15);
 scene.add(camera);
-scene2.add(camera);
-const axesHelper = new THREE.AxesHelper();
-scene.add(axesHelper);
-// mesh.rotation.reorder("YXZ");
-// mesh.rotation.z = Math.PI / 4;
-// mesh.rotation.y = Math.PI / 4;
+const axesHelper = new THREE.AxesHelper(20);
+// scene.add(axesHelper);
 
-mesh.scale.set(1, 1, 1);
 /**
  * Renderer
  */
@@ -80,53 +105,93 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.render(scene, camera);
 
-const renderer2 = new THREE.WebGLRenderer({
-    canvas: canvas2,
+window.addEventListener("dblclick", () => {
+    const fullscreenElement =
+        document.fullscreenElement || document.webkitFullscreenElement;
+
+    if (!fullscreenElement) {
+        if (canvas.requestFullscreen) {
+            canvas.requestFullscreen();
+        } else if (canvas.webkitRequestFullscreen) {
+            canvas.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
 });
-renderer2.setSize(sizes.width, sizes.height);
-renderer2.render(scene2, camera);
 
 const clock = new THREE.Clock();
-//Animation
-
-// gsap.to(mesh.rotation, { duration: 100, delay: 0, x: 60 });
-// gsap.to(mesh.position, { duration: 1, delay: 2, x: 0 });
-
-var slider1 = document.getElementById("myRange-1");
-
-slider1.oninput = function () {
-    mesh.position.x = slider1.value;
-    console.log(slider1.value);
-    // renderer.render(scene, camera);
-};
-
-var slider2 = document.getElementById("myRange-2");
-
-slider2.oninput = function () {
-    mesh.position.y = slider2.value;
-    console.log(slider2.value);
-    // renderer.render(scene, camera);
-};
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+var x, y, vx, vy; // position and velocity
+var earthRadius = 6371000; // meters
+var mountainHeight = earthRadius * 0.165; // chosen to match image
+var newtonG = 6.67e-11; // grav. constant in SI units
+var earthMass = 5.97e24; // kilograms
+var dt = 5; // time step in seconds
+var ratio = 10.03 / earthRadius;
+var speedSlider = document.getElementById("speedSlider");
+var keepLoop = false;
+projectile.position.set(0, 11.68, 0);
+scene.add(projectile);
+function fireProjectile() {
+    x = 0;
+    y = earthRadius + mountainHeight;
+    vx = Number(speedSlider.value);
+    vy = 0;
+    keepLoop = true;
+    moveProjectile();
+}
+
+function moveProjectile() {
+    var r = Math.sqrt(x * x + y * y);
+    let px = x;
+    let py = y;
+    if (r > earthRadius) {
+        var accel = (newtonG * earthMass) / (r * r);
+        var ax = (-accel * x) / r;
+        var ay = (-accel * y) / r;
+
+        vx += ax * dt;
+        vy += ay * dt;
+        x += vx * dt;
+        y += vy * dt;
+
+        projectile.position.set(x * ratio, y * ratio, 0);
+    }
+    console.log("Entering drawProjectile function");
+    console.log("Current position is " + x * ratio + ", " + y * ratio);
+    if (x != px && py != y && keepLoop) {
+        window.setTimeout(moveProjectile, 1000 / 30);
+    }
+}
+function resetProjectile() {
+    x = 0;
+    y = earthRadius + mountainHeight;
+    vx = Number(speedSlider.value);
+    vy = 0;
+    keepLoop = false;
+    projectile.position.set(x * ratio, y * ratio, 0);
+}
+document.getElementById("buttonfire").addEventListener("click", fireProjectile);
+document
+    .getElementById("buttonreset")
+    .addEventListener("click", resetProjectile);
+
 const tick = () => {
     const elpasedTime = clock.getElapsedTime();
 
-    // console.log(elpasedTime);
-    mesh2.rotation.z = elpasedTime;
-    // mesh.position.y = Math.cos(1 * elpasedTime);
-    // camera.position.x = Math.sin(1 * elpasedTime);
-    //Update camera
-    // camera.position.x = -3 * Math.sin(cursor.x * 4);
-    // camera.position.z = -3 * Math.cos(cursor.x * 4);
-    // camera.position.y = cursor.y * 5;
-    // camera.lookAt(mesh.position);
     controls.update();
     renderer.render(scene, camera);
-    renderer2.render(scene2, camera);
-
+    camera.updateProjectionMatrix();
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     window.requestAnimationFrame(tick);
 };
 tick();
