@@ -22,15 +22,26 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
+ * texture
+ */
+const textureLoader = new THREE.TextureLoader();
+const no_clouds = textureLoader.load("./images/2_no_clouds_4k.jpg");
+const elev_bump = textureLoader.load("./images/elev_bump_4k.jpg");
+const water = textureLoader.load("./images/water_4k.png");
+const clouds = textureLoader.load("./images/fair_clouds_4k.png");
+const stars = textureLoader.load("./images/galaxy_starfield.png");
+const astroid = textureLoader.load("./images/asteroid_texture.jpg");
+
+/**
  * Object
  */
 const earthMesh = new THREE.Mesh(
     new THREE.SphereGeometry(10, 32, 32),
     new THREE.MeshPhongMaterial({
-        map: THREE.ImageUtils.loadTexture("images/2_no_clouds_4k.jpg"),
-        bumpMap: THREE.ImageUtils.loadTexture("images/elev_bump_4k.jpg"),
+        map: no_clouds,
+        bumpMap: elev_bump,
         bumpScale: 0.005,
-        specularMap: THREE.ImageUtils.loadTexture("images/water_4k.png"),
+        specularMap: water,
         specular: new THREE.Color("grey"),
     })
 );
@@ -38,7 +49,7 @@ scene.add(earthMesh);
 const coulds = new THREE.Mesh(
     new THREE.SphereGeometry(10.03, 32, 32),
     new THREE.MeshPhongMaterial({
-        map: THREE.ImageUtils.loadTexture("images/fair_clouds_4k.png"),
+        map: clouds,
         transparent: true,
     })
 );
@@ -47,22 +58,19 @@ scene.add(coulds);
 const space = new THREE.Mesh(
     new THREE.SphereGeometry(90, 64, 64),
     new THREE.MeshBasicMaterial({
-        map: THREE.ImageUtils.loadTexture("images/galaxy_starfield.png"),
+        map: stars,
         side: THREE.BackSide,
     })
 );
 scene.add(space);
 
 const projGeometry = new THREE.SphereGeometry(0.2, 32, 32);
-const projMaterial = new THREE.MeshPhongMaterial({
-    map: THREE.ImageUtils.loadTexture("images/asteroid_texture.jpg"),
-    transparent: true,
-});
+const projMaterial = new THREE.MeshPhongMaterial({ map: astroid });
 const projectile = new THREE.Mesh(projGeometry, projMaterial);
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-var light = new THREE.DirectionalLight(0xffffff, 0.5);
+let light = new THREE.DirectionalLight(0xffffff, 0.5);
 light.position.set(5, 3, 10);
 scene.add(light);
 
@@ -85,13 +93,13 @@ window.addEventListener("resize", (event) => {
  * Camera
  */
 const camera = new THREE.PerspectiveCamera(
-    75,
+    50,
     sizes.width / sizes.height,
     0.1,
     100
 );
 
-camera.position.set(0, 15, 15);
+camera.position.set(0, 20, 20);
 scene.add(camera);
 const axesHelper = new THREE.AxesHelper(20);
 // scene.add(axesHelper);
@@ -125,19 +133,27 @@ window.addEventListener("dblclick", () => {
 });
 
 const clock = new THREE.Clock();
-
+/**
+ * Control
+ */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.minDistance = 12.0;
+controls.maxDistance = 50.0;
+controls.zoomSpeed = 1.0;
+controls.rotateSpeed = 1.0;
+controls.panSpeed = 1.0;
+controls.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
 
-var x, y, vx, vy; // position and velocity
-var earthRadius = 6371000; // meters
-var mountainHeight = earthRadius * 0.165; // chosen to match image
-var newtonG = 6.67e-11; // grav. constant in SI units
-var earthMass = 5.97e24; // kilograms
-var dt = 5; // time step in seconds
-var ratio = 10.03 / earthRadius;
-var speedSlider = document.getElementById("speedSlider");
-var keepLoop = false;
+let x, y, vx, vy; // position and velocity
+const earthRadius = 6371000; // meters
+const mountainHeight = earthRadius * 0.165; // chosen to match image
+const newtonG = 6.67e-11; // grav. constant in SI units
+const earthMass = 5.97e24; // kilograms
+const dt = 5; // time step in seconds
+const ratio = 10.03 / earthRadius;
+let speedSlider = document.getElementById("speedSlider");
+let keepLoop = false;
 projectile.position.set(0, 11.68, 0);
 scene.add(projectile);
 function fireProjectile() {
@@ -150,13 +166,13 @@ function fireProjectile() {
 }
 
 function moveProjectile() {
-    var r = Math.sqrt(x * x + y * y);
+    let r = Math.sqrt(x * x + y * y);
     let px = x;
     let py = y;
     if (r > earthRadius) {
-        var accel = (newtonG * earthMass) / (r * r);
-        var ax = (-accel * x) / r;
-        var ay = (-accel * y) / r;
+        let accel = (newtonG * earthMass) / (r * r);
+        let ax = (-accel * x) / r;
+        let ay = (-accel * y) / r;
 
         vx += ax * dt;
         vy += ay * dt;
@@ -185,8 +201,6 @@ document
     .addEventListener("click", resetProjectile);
 
 const tick = () => {
-    const elpasedTime = clock.getElapsedTime();
-
     controls.update();
     renderer.render(scene, camera);
     camera.updateProjectionMatrix();
