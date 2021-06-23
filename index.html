@@ -32,45 +32,26 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Newton’s Cannon</title>
         <link rel="stylesheet" href="style.css" />
+        <script type="text/javascript" src="dat.gui.min.js"></script>
         <script type="module" src="./index.js"></script>
     </head>
     <body>
-        <div class="tooltip" id="title1">
-            Newton’s Cannon
-
-            <p class="tooltiptext">
-                <a href="https://en.wikipedia.org/wiki/Newton%27s_cannonball"
-                    >wikipedia link</a
-                >
+        <canvas class="webgl"></canvas>
+        <div id="head">
+            <h1>Newton’s <br />Cannon</h1>
+        </div>
+        <div id="info">
+            <p>
                 Newton's Cannon is a thought experiment used to motivate orbital
                 motion. For low speeds, the cannonball doesn't get far relative
                 to the Earth's size, and the downward gravity gives a parabolic
                 path. At higher speeds, the cannonball goes far enough that the
                 direction of gravity always toward the center of the Earth
-                changes, and so does the shape of the path. <br />
+                changes, and so does the shape of the path.<a href="wiki">
+                    wikipedia link
+                </a>
             </p>
         </div>
-        <canvas class="webgl"></canvas>
-        <div id="info">
-            Speed of Projectile
-            <input
-                id="speedSlider"
-                type="range"
-                min="0"
-                max="8000"
-                step="100"
-                value="3000"
-                class="slider"
-                id="myRange"
-                onchange="speedReadout.innerHTML = speedSlider.value;"
-            />
-            Initial speed = <span id="speedReadout">3000</span> m/s<br />
-            <button id="buttonfire" class="button blue" type="button">
-                Fire
-            </button>
-            <button id="buttonreset" class="button red" type="button">
-                Reset
-            </button>
-        </div>
+        <div id="notes">'H' key to Show/Hide Control Panel</div>
     </body>
 </html>

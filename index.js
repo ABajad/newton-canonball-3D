@@ -1,6 +1,7 @@
 // import * as THREE from "https://unpkg.com/three@0.127.0/build/three.module.js";
 import * as THREE from "./three.module.js";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.127.0/examples/jsm/controls/OrbitControls.js";
+// import * as dat from "./dat.gui.min.js";
 
 /**
  * Cursor
@@ -28,7 +29,7 @@ const textureLoader = new THREE.TextureLoader();
 const no_clouds = textureLoader.load("./images/2_no_clouds_4k.jpg");
 const elev_bump = textureLoader.load("./images/elev_bump_4k.jpg");
 const water = textureLoader.load("./images/water_4k.png");
-const clouds = textureLoader.load("./images/fair_clouds_4k.png");
+const text_clouds = textureLoader.load("./images/fair_clouds_4k.png");
 const stars = textureLoader.load("./images/galaxy_starfield.png");
 const astroid = textureLoader.load("./images/asteroid_texture.jpg");
 
@@ -46,17 +47,17 @@ const earthMesh = new THREE.Mesh(
     })
 );
 scene.add(earthMesh);
-const coulds = new THREE.Mesh(
-    new THREE.SphereGeometry(10.03, 32, 32),
+const clouds = new THREE.Mesh(
+    new THREE.SphereGeometry(10.03, 128, 128),
     new THREE.MeshPhongMaterial({
-        map: clouds,
+        map: text_clouds,
         transparent: true,
     })
 );
-scene.add(coulds);
+scene.add(clouds);
 
 const space = new THREE.Mesh(
-    new THREE.SphereGeometry(90, 64, 64),
+    new THREE.SphereGeometry(90, 128, 128),
     new THREE.MeshBasicMaterial({
         map: stars,
         side: THREE.BackSide,
@@ -145,60 +146,153 @@ controls.rotateSpeed = 1.0;
 controls.panSpeed = 1.0;
 controls.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
 
-let x, y, vx, vy; // position and velocity
-const earthRadius = 6371000; // meters
-const mountainHeight = earthRadius * 0.165; // chosen to match image
-const newtonG = 6.67e-11; // grav. constant in SI units
-const earthMass = 5.97e24; // kilograms
-const dt = 5; // time step in seconds
-const ratio = 10.03 / earthRadius;
-let speedSlider = document.getElementById("speedSlider");
-let keepLoop = false;
-projectile.position.set(0, 11.68, 0);
+/**
+ * Dat Gui Control
+ */
+const parameters = {
+    x: 0,
+    y: 11.68,
+    z: 0,
+    vx: 0,
+    vy: 0,
+    speed: 3000,
+    earthRadius: 6371000, // meters
+    newtonG: 6.67e-11, // grav. constant in SI units
+    earthMass: 5.97e24, // kilograms
+    earthDensity: 5515,
+    dt: 5, // time step in seconds
+    ratio: 0.0000015743211426777584,
+};
+projectile.position.set(parameters.x, parameters.y, parameters.z);
 scene.add(projectile);
-function fireProjectile() {
-    x = 0;
-    y = earthRadius + mountainHeight;
-    vx = Number(speedSlider.value);
-    vy = 0;
+let keepLoop = false;
+parameters.earthMassCalc =
+    parameters.earthDensity *
+    (4.0 / 3.0) *
+    Math.PI *
+    Math.pow(parameters.earthRadius, 3);
+parameters.mountainHeight = parameters.earthRadius * 0.165; // chosen to match image
+// parameters.ratio = 10.03 / parameters.earthRadius;
+parameters.earthMeshScale = (parameters.ratio * parameters.earthRadius) / 10.03;
+console.log(parameters.ratio);
+parameters.moveProjectile = () => {
+    let r = Math.sqrt(
+        parameters.x * parameters.x + parameters.y * parameters.y
+    );
+    let px = parameters.x;
+    let py = parameters.y;
+    if (r > parameters.earthRadius) {
+        let accel = (parameters.newtonG * parameters.earthMassCalc) / (r * r);
+        let ax = (-accel * parameters.x) / r;
+        let ay = (-accel * parameters.y) / r;
+
+        parameters.vx += ax * parameters.dt;
+        parameters.vy += ay * parameters.dt;
+        parameters.x += parameters.vx * parameters.dt;
+        parameters.y += parameters.vy * parameters.dt;
+
+        projectile.position.set(
+            parameters.x * parameters.ratio,
+            parameters.y * parameters.ratio,
+            0
+        );
+    }
+    console.log("now Entering drawProjectile function");
+    console.log(
+        "Current position is " +
+            parameters.x * parameters.ratio +
+            ", " +
+            parameters.y * parameters.ratio
+    );
+    if (parameters.x != px && py != parameters.y && keepLoop) {
+        window.setTimeout(parameters.moveProjectile, 1000 / 30);
+    }
+};
+parameters.fireProjectile = () => {
+    parameters.x = 0;
+    parameters.y = parameters.earthRadius + parameters.mountainHeight;
+    parameters.vx = parameters.speed;
+    parameters.vy = 0;
     keepLoop = true;
-    moveProjectile();
-}
-
-function moveProjectile() {
-    let r = Math.sqrt(x * x + y * y);
-    let px = x;
-    let py = y;
-    if (r > earthRadius) {
-        let accel = (newtonG * earthMass) / (r * r);
-        let ax = (-accel * x) / r;
-        let ay = (-accel * y) / r;
-
-        vx += ax * dt;
-        vy += ay * dt;
-        x += vx * dt;
-        y += vy * dt;
-
-        projectile.position.set(x * ratio, y * ratio, 0);
-    }
-    console.log("Entering drawProjectile function");
-    console.log("Current position is " + x * ratio + ", " + y * ratio);
-    if (x != px && py != y && keepLoop) {
-        window.setTimeout(moveProjectile, 1000 / 30);
-    }
-}
-function resetProjectile() {
-    x = 0;
-    y = earthRadius + mountainHeight;
-    vx = Number(speedSlider.value);
-    vy = 0;
+    console.log(parameters.y);
+    parameters.moveProjectile();
+};
+parameters.resetProjectile = () => {
+    parameters.x = 0;
+    parameters.y = parameters.earthRadius + parameters.mountainHeight;
+    parameters.vx = parameters.speed;
+    parameters.vy = 0;
     keepLoop = false;
-    projectile.position.set(x * ratio, y * ratio, 0);
-}
-document.getElementById("buttonfire").addEventListener("click", fireProjectile);
-document
-    .getElementById("buttonreset")
-    .addEventListener("click", resetProjectile);
+    projectile.position.set(
+        parameters.x * parameters.ratio,
+        parameters.y * parameters.ratio,
+        0
+    );
+};
+parameters.earthSize = () => {
+    console.log(parameters.earthMeshScale);
+    earthMesh.scale.set(
+        parameters.earthMeshScale,
+        parameters.earthMeshScale,
+        parameters.earthMeshScale
+    );
+    clouds.scale.set(
+        parameters.earthMeshScale,
+        parameters.earthMeshScale,
+        parameters.earthMeshScale
+    );
+};
+
+const gui = new dat.GUI({ width: 400 });
+const projectileGui = gui.addFolder("Projectile");
+projectileGui
+    .add(parameters, "speed", 0, 10000)
+    .setValue(3000)
+    .name("Speed (m/s)");
+projectileGui
+    .add(
+        parameters,
+        "mountainHeight",
+        parameters.earthRadius * 0.01,
+        parameters.earthRadius * 0.5
+    )
+    .setValue(parameters.earthRadius * 0.165)
+    .name("Launch Height (m)")
+    .onChange(() => {
+        parameters.resetProjectile();
+    });
+
+const planetGui = gui.addFolder("Planet");
+planetGui
+    .add(parameters, "earthRadius", 3185500, 12742000)
+    .name("Planet Radius")
+    .onChange(() => {
+        parameters.earthMeshScale =
+            (parameters.ratio * parameters.earthRadius) / 10.03;
+        parameters.earthMassCalc =
+            parameters.earthDensity *
+            (4.0 / 3.0) *
+            Math.PI *
+            Math.pow(parameters.earthRadius, 3);
+        console.log(parameters.earthMassCalc);
+        parameters.earthSize();
+        parameters.resetProjectile();
+    });
+
+planetGui
+    .add(parameters, "earthDensity", 1000, 10000)
+    .setValue(5515)
+    .name("Planet Density")
+    .onChange(() => {
+        parameters.earthMassCalc =
+            parameters.earthDensity *
+            (4.0 / 3.0) *
+            Math.PI *
+            Math.pow(parameters.earthRadius, 3);
+    });
+
+gui.add(parameters, "fireProjectile").name("Fire! (click here)");
+gui.add(parameters, "resetProjectile").name("Reset (click here)");
 
 const tick = () => {
     controls.update();
