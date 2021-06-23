@@ -174,7 +174,6 @@ parameters.earthMassCalc =
 parameters.mountainHeight = parameters.earthRadius * 0.165; // chosen to match image
 // parameters.ratio = 10.03 / parameters.earthRadius;
 parameters.earthMeshScale = (parameters.ratio * parameters.earthRadius) / 10.03;
-console.log(parameters.ratio);
 parameters.moveProjectile = () => {
     let r = Math.sqrt(
         parameters.x * parameters.x + parameters.y * parameters.y
@@ -214,7 +213,6 @@ parameters.fireProjectile = () => {
     parameters.vx = parameters.speed;
     parameters.vy = 0;
     keepLoop = true;
-    console.log(parameters.y);
     parameters.moveProjectile();
 };
 parameters.resetProjectile = () => {
@@ -230,7 +228,6 @@ parameters.resetProjectile = () => {
     );
 };
 parameters.earthSize = () => {
-    console.log(parameters.earthMeshScale);
     earthMesh.scale.set(
         parameters.earthMeshScale,
         parameters.earthMeshScale,
