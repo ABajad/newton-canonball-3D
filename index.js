@@ -97,7 +97,7 @@ const camera = new THREE.PerspectiveCamera(
     50,
     sizes.width / sizes.height,
     0.1,
-    1000
+    200
 );
 
 camera.position.set(0, 20, 20);
@@ -140,7 +140,7 @@ const clock = new THREE.Clock();
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.minDistance = 12.0;
-controls.maxDistance = 50.0;
+controls.maxDistance = 70.0;
 controls.zoomSpeed = 1.0;
 controls.rotateSpeed = 1.0;
 controls.panSpeed = 1.0;
